@@ -38,3 +38,12 @@ services:
         resource: '../src/Infrastructure/Command'
         tags:
             - { name: 'console.command' }
+    
+    App\Core\Application\UseCase\HandleFileEvent:
+        arguments:
+            $strategies: !tagged_iterator 'app.file_strategy'
+            $watchedDir: '%watcher.watched_dir%'
+            $processedDir: '%watcher.processed_dir%'
+            $errorDir: '%watcher.error_dir%'
+
+    Psr\Log\LoggerInterface: '@logger'

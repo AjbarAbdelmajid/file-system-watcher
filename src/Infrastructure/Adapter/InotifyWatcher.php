@@ -1,4 +1,5 @@
 <?php
+// src/Infrastructure/Adapter/InotifyWatcher.php
 namespace App\Infrastructure\Adapter;
 
 use App\Core\Application\Message\ProcessFileEventMessage;
@@ -14,63 +15,55 @@ final class InotifyWatcher
 
     public function run(): void
     {
-        if (!extension_loaded('inotify')) {
-            throw new \RuntimeException('inotify extension is required');
+        // Tell the user we’re monitoring
+        // Note: your WatchCommand already prints this, so you can omit buffering here.
+
+        // Build the inotifywait command:
+        $cmd = [
+            'inotifywait',
+            '-m',                // monitor continuously
+            '-r',                // recursive
+            '-e', 'create',
+            '-e', 'modify',
+            '-e', 'delete',
+            '--format', '%e|%w%f',
+            $this->watchedDir,
+        ];
+
+        $process = proc_open($cmd, [
+            1 => ['pipe', 'w'],  // stdout
+            2 => ['pipe', 'w'],  // stderr
+        ], $pipes);
+
+        if (!is_resource($process)) {
+            throw new \RuntimeException('Failed to launch inotifywait');
         }
 
-        $fd = inotify_init();
-        stream_set_blocking($fd, true);
-
-        // watch recursively
-        $this->addWatches($fd, $this->watchedDir);
-
-        while (true) {
-            $events = inotify_read($fd);
-            foreach ($events as $e) {
-                $path = rtrim($this->watchedDir, '/')
-                      . '/' 
-                      . $e['name'];
-                $type = $this->mapMaskToEventType($e['mask']);
-                if ($type) {
-                    $this->bus->dispatch(
-                        new ProcessFileEventMessage($path, $type)
-                    );
-                }
-                // handle new subdirectories
-                if ($e['mask'] & IN_ISDIR && $e['mask'] & IN_CREATE) {
-                    $this->addWatches($fd, $path);
-                }
+        $stdout = $pipes[1];
+        while (($line = fgets($stdout)) !== false) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
             }
-        }
-    }
 
-    private function addWatches($fd, string $dir): void
-    {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($dir)
-        );
-        foreach ($iterator as $file) {
-            if ($file->isDir()) {
-                inotify_add_watch(
-                    $fd,
-                    $file->getPathname(),
-                    IN_CREATE | IN_MODIFY | IN_DELETE | IN_ISDIR
-                );
+            // inotifywait outputs e.g. "CREATE|/watched/incoming/imgs/foo.jpg"
+            [$events, $path] = explode('|', $line, 2);
+            $firstEvent = explode(',', $events)[0];
+
+            $type = match ($firstEvent) {
+                'CREATE' => EventType::CREATE,
+                'MODIFY' => EventType::MODIFY,
+                'DELETE' => EventType::DELETE,
+                default   => null,
+            };
+
+            if ($type === null) {
+                continue;
             }
-        }
-    }
 
-    private function mapMaskToEventType(int $mask): ?EventType
-    {
-        if ($mask & IN_CREATE) {
-            return EventType::CREATE;
+            $this->bus->dispatch(new ProcessFileEventMessage($path, $type));
         }
-        if ($mask & IN_MODIFY) {
-            return EventType::MODIFY;
-        }
-        if ($mask & IN_DELETE) {
-            return EventType::DELETE;
-        }
-        return null;
+
+        proc_close($process);
     }
 }

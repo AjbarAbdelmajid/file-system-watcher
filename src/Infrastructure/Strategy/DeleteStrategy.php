@@ -7,7 +7,7 @@ use App\Core\Port\MemeFetcherPort;
 
 final class DeleteStrategy implements FileTypeStrategyInterface
 {
-    public function __construct(private readonly MemeFetcherPort $fetcher) {}
+    public function __construct(private readonly MemeFetcherPort $memeFetcher) {}
 
     public function supports(string $extension, EventType $type): bool
     {
@@ -16,6 +16,6 @@ final class DeleteStrategy implements FileTypeStrategyInterface
 
     public function handle(string $fullPath): void
     {
-        $this->fetcher->fetchAndSave($fullPath);
+        $this->memeFetcher->fetchAndSave($fullPath);
     }
 }

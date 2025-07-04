@@ -4,6 +4,7 @@ namespace App\Core\Application\UseCase;
 use App\Core\Port\EventType;
 use App\Core\Port\FileTypeStrategyInterface;
 use App\Core\Port\MovableFileTypeStrategyInterface;
+use Psr\Log\LoggerInterface;
 
 final class HandleFileEvent
 {
@@ -13,6 +14,7 @@ final class HandleFileEvent
         private readonly string $watchedDir,
         private readonly string $processedDir,
         private readonly string $errorDir,
+        private readonly LoggerInterface $logger
     ) {}
     
     public function process(string $fullPath, EventType $type): void

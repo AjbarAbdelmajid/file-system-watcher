@@ -15,4 +15,4 @@ services:
       - ./:/app
       - ./watched:/watched
       - ./logs:/app/var/log
-    command: ["php", "bin/console", "file:watch", "/watched"]
+    command: ["file:watch", "/watched"]
