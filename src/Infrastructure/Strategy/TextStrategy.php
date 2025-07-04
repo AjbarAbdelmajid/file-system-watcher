@@ -5,7 +5,9 @@ use App\Core\Port\FileTypeStrategyInterface;
 use App\Core\Port\EventType;
 use App\Core\Port\TextAppenderPort;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 
+#[AsTaggedItem('app.file_strategy')]
 final class TextStrategy implements FileTypeStrategyInterface
 {
     public function __construct(

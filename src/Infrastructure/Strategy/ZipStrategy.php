@@ -5,7 +5,9 @@ use App\Core\Port\FileTypeStrategyInterface;
 use App\Core\Port\EventType;
 use App\Core\Port\ZipExtractorPort;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 
+#[AsTaggedItem('app.file_strategy')]
 final class ZipStrategy implements FileTypeStrategyInterface
 {
     public function __construct(

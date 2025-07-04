@@ -5,7 +5,9 @@ use App\Core\Port\EventType;
 use App\Core\Port\ImageOptimizerPort;
 use App\Core\Port\MovableFileTypeStrategyInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 
+#[AsTaggedItem('app.file_strategy')]
 final class ImageStrategy implements MovableFileTypeStrategyInterface
 {
     private const EXTENSIONS = ['jpg','jpeg','png','gif','webp'];

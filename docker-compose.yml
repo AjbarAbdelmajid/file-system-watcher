@@ -15,4 +15,4 @@ services:
       - ./:/app
       - ./watched:/watched
       - ./logs:/app/var/log
-    command: ["file:watch", "/watched"]
+    command: ["file:watch"]
