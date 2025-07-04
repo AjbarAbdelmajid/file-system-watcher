@@ -1,0 +1,18 @@
+services:
+  # “app” is for general‐purpose CLI container
+  app:
+    build: .
+    volumes:
+      - ./:/app
+      - ./watched:/watched
+      - ./logs:/app/var/log
+    entrypoint: []
+
+  # “watcher” is the long-running inotify process
+  watcher:
+    build: .
+    volumes:
+      - ./:/app
+      - ./watched:/watched
+      - ./logs:/app/var/log
+    command: ["php", "bin/console", "file:watch", "/watched"]
