@@ -30,6 +30,12 @@ services:
             - '../src/Infrastructure/Command'
             - '../src/Tests'
 
+    Psr\Log\LoggerInterface: '@logger'
+
+    App\Infrastructure\Middleware\MessageLoggingMiddleware:
+        tags:
+        - { name: 'messenger.middleware' }
+
     App\Infrastructure\MessageHandler\:
         resource: '../src/Infrastructure/MessageHandler'
         tags: ['messenger.message_handler']
@@ -45,5 +51,3 @@ services:
             $watchedDir: '%watcher.watched_dir%'
             $processedDir: '%watcher.processed_dir%'
             $errorDir: '%watcher.error_dir%'
-
-    Psr\Log\LoggerInterface: '@logger'

@@ -19,6 +19,11 @@ final class HandleFileEvent
     
     public function process(string $fullPath, EventType $type): void
     {
+        $this->logger->info('Received filesystem event', [
+            'path' => $fullPath,
+            'type' => $type->value,
+        ]);
+
         $extension = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
 
         foreach ($this->strategies as $strategy) {
@@ -26,9 +31,19 @@ final class HandleFileEvent
                 continue;
             }
 
+            $this->logger->info('Dispatching to strategy', [
+                'strategy'  => get_class($strategy),
+                'extension' => $extension,
+                'type'      => $type->value,
+            ]);
+
             try {
                 // execute the core handling
                 $strategy->handle($fullPath);
+                $this->logger->info('Strategy completed', [
+                    'strategy' => get_class($strategy),
+                    'path'     => $fullPath,
+                ]);
 
                 // if this strategy is “movable”, relocate the file
                 if ($strategy instanceof MovableFileTypeStrategyInterface) {
@@ -36,12 +51,23 @@ final class HandleFileEvent
                 }
 
             } catch (\Throwable $e) {
+                $this->logger->error('Error in strategy', [
+                    'strategy'  => get_class($strategy),
+                    'path'      => $fullPath,
+                    'exception' => $e,
+                ]);
                 $this->moveOnError($fullPath);
             }
 
             // once one strategy handled it, we’re done
             return;
         }
+
+        $this->logger->warning('No strategy found for file', [
+            'path'      => $fullPath,
+            'extension' => $extension,
+            'type'      => $type->value,
+        ]);
     }
 
     private function moveOnSuccess(string $fullPath, string $ext): void
@@ -53,6 +79,7 @@ final class HandleFileEvent
             mkdir(dirname($target), 0755, true);
         }
         rename($fullPath, $target);
+        $this->logger->info('Moved file to processed', ['destination' => $target]);
     }
 
     private function moveOnError(string $fullPath): void
@@ -64,6 +91,7 @@ final class HandleFileEvent
         if (file_exists($fullPath)) {
             rename($fullPath, $target);
         }
+        $this->logger->info('Moved file to error', ['destination' => $target]);
     }
 
 }

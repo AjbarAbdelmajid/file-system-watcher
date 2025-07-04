@@ -23,6 +23,8 @@ final class ImageStrategy implements MovableFileTypeStrategyInterface
 
     public function handle(string $fullPath): void
     {
+        $this->logger->info('Optimizing image', ['path' => $fullPath]);
         $this->optimizer->optimize($fullPath, $fullPath);
+        $this->logger->info('Image optimization complete', ['path' => $fullPath]);
     }
 }
