@@ -15,7 +15,7 @@ WORKDIR /app
 COPY . .
 
 # 2) Install PHP dependencies without running post-install scripts
-RUN composer install --no-dev --optimize-autoloader --no-scripts
+RUN composer install --no-dev --optimize-autoloader
 
 # Default entrypoint: start the watcher
 ENTRYPOINT ["php", "bin/console", "file:watch"]

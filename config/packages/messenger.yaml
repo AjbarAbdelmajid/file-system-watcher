@@ -1,0 +1,17 @@
+framework:
+    messenger:
+        default_bus: messenger.bus.default
+        transports:
+            # sync transport for now—everything runs in-process
+            sync: 'sync://'
+        routing:
+            # route our message DTO to the default bus
+            'App\Core\Application\Message\ProcessFileEventMessage': sync
+
+# when@test:
+#    framework:
+#        messenger:
+#            transports:
+#                # replace with your transport name here (e.g., my_transport: 'in-memory://')
+#                # For more Messenger testing tools, see https://github.com/zenstruck/messenger-test
+#                async: 'in-memory://'
