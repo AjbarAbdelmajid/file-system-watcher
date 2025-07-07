@@ -11,20 +11,21 @@ use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 final class JsonStrategy implements FileTypeStrategyInterface
 {
     public function __construct(
-        private readonly HttpClientPort $http,
+        private readonly HttpClientPort  $client,
         private readonly LoggerInterface $logger
     ) {}
 
     public function supports(string $extension, EventType $type): bool
     {
-        return $extension === 'json' && $type !== EventType::DELETE;
+        return $extension === 'json'
+            && in_array($type, [EventType::CREATE, EventType::MODIFY], true);
     }
 
     public function handle(string $fullPath): void
     {
         $this->logger->info('Posting JSON file', ['path' => $fullPath]);
         $data = json_decode(file_get_contents($fullPath), true);
-        $this->http->postJson($fullPath, $data);
+        $this->client->postJson($fullPath, $data);
         $this->logger->info('JSON POST complete', ['path' => $fullPath]);
     }
 }

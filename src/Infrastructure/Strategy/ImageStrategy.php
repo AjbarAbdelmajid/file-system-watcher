@@ -2,13 +2,13 @@
 namespace App\Infrastructure\Strategy;
 
 use App\Core\Port\EventType;
+use App\Core\Port\FileTypeStrategyInterface;
 use App\Core\Port\ImageOptimizerPort;
-use App\Core\Port\MovableFileTypeStrategyInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 
 #[AsTaggedItem('app.file_strategy')]
-final class ImageStrategy implements MovableFileTypeStrategyInterface
+final class ImageStrategy implements FileTypeStrategyInterface
 {
     private const EXTENSIONS = ['jpg','jpeg','png','gif','webp'];
 
@@ -20,7 +20,7 @@ final class ImageStrategy implements MovableFileTypeStrategyInterface
     public function supports(string $extension, EventType $type): bool
     {
         return in_array($extension, self::EXTENSIONS, true)
-            && $type !== EventType::DELETE;
+            && in_array($type, [EventType::CREATE, EventType::MODIFY], true);
     }
 
     public function handle(string $fullPath): void

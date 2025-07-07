@@ -45,8 +45,10 @@ final class HandleFileEvent
                     'path'     => $fullPath,
                 ]);
 
-                // if this strategy is “movable”, relocate the file
-                if ($strategy instanceof MovableFileTypeStrategyInterface) {
+                if (
+                    $strategy instanceof MovableFileTypeStrategyInterface
+                    && $type === EventType::CREATE
+                ) {
                     $this->moveOnSuccess($fullPath, $extension);
                 }
 

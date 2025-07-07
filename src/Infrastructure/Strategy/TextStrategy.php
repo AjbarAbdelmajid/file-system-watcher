@@ -17,7 +17,8 @@ final class TextStrategy implements FileTypeStrategyInterface
 
     public function supports(string $extension, EventType $type): bool
     {
-        return $extension === 'txt' && $type !== EventType::DELETE;
+        return $extension === 'txt'
+            && in_array($type, [EventType::CREATE, EventType::MODIFY], true);
     }
 
     public function handle(string $fullPath): void

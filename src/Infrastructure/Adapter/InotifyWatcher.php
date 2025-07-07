@@ -1,5 +1,4 @@
 <?php
-// src/Infrastructure/Adapter/InotifyWatcher.php
 namespace App\Infrastructure\Adapter;
 
 use App\Core\Application\Message\ProcessFileEventMessage;
