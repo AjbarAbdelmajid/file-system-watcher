@@ -12,6 +12,7 @@ final class TextStrategy implements FileTypeStrategyInterface
 {
     public function __construct(
         private readonly TextAppenderPort $appender,
+        private readonly string           $processedDir,
         private readonly LoggerInterface   $logger
     ) {}
 
@@ -23,8 +24,17 @@ final class TextStrategy implements FileTypeStrategyInterface
 
     public function handle(string $fullPath): void
     {
-        $this->logger->info('Appending text to file', ['path' => $fullPath]);
-        $this->appender->appendRandomText($fullPath);
-        $this->logger->info('Text appended', ['path' => $fullPath]);
+        $this->logger->info('Appending text', ['path'=>$fullPath]);
+
+        // then move into processed/txt/
+        $destDir = $this->processedDir . '/txt';
+        if (!is_dir($destDir)) {
+            mkdir($destDir, 0755, true);
+        }
+        $dest = $destDir . '/' . basename($fullPath);
+        rename($fullPath, $dest);
+        $this->appender->appendRandomText($dest);
+
+        $this->logger->info('Moved TXT to processed', ['dest'=>$dest]);
     }
 }

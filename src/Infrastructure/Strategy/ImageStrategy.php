@@ -14,6 +14,7 @@ final class ImageStrategy implements FileTypeStrategyInterface
 
     public function __construct(
         private readonly ImageOptimizerPort $optimizer,
+        private readonly string             $processedDir,
         private readonly LoggerInterface    $logger
     ) {}
 
@@ -26,7 +27,21 @@ final class ImageStrategy implements FileTypeStrategyInterface
     public function handle(string $fullPath): void
     {
         $this->logger->info('Optimizing image', ['path' => $fullPath]);
-        $this->optimizer->optimize($fullPath, $fullPath);
-        $this->logger->info('Image optimization complete', ['path' => $fullPath]);
+
+        // Prepare destination folder: processed/imgs
+        $destDir = $this->processedDir . '/imgs';
+        if (!is_dir($destDir)) {
+            mkdir($destDir, 0755, true);
+        }
+
+        $dest = $destDir . '/' . basename($fullPath);
+
+        // Run the optimizer (source → target)
+        $this->optimizer->optimize($fullPath, $dest);
+
+        // Overwrite/move original
+        rename($fullPath, $dest);
+
+        $this->logger->info('Image moved to processed', ['dest' => $dest]);
     }
 }

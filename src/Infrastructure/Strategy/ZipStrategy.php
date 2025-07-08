@@ -12,7 +12,8 @@ final class ZipStrategy implements FileTypeStrategyInterface
 {
     public function __construct(
         private readonly ZipExtractorPort $extractor,
-        private readonly LoggerInterface  $logger
+        private readonly LoggerInterface  $logger,
+        private readonly string           $processedDir
     ) {}
 
     public function supports(string $extension, EventType $type): bool
@@ -24,7 +25,22 @@ final class ZipStrategy implements FileTypeStrategyInterface
     public function handle(string $fullPath): void
     {
         $this->logger->info('Extracting ZIP archive', ['path' => $fullPath]);
-        $this->extractor->extract($fullPath, dirname($fullPath));
-        $this->logger->info('ZIP extraction complete', ['path' => dirname($fullPath)]);
+
+        // Base name without extension
+        $baseName = pathinfo($fullPath, PATHINFO_FILENAME);
+
+        // Destination: processed/zip/<zip-name>/
+        $destDir = "{$this->processedDir}/zip/{$baseName}";
+        if (!is_dir($destDir)) {
+            mkdir($destDir, 0755, true);
+        }
+
+        // Extract into that folder
+        $this->extractor->extract($fullPath, $destDir);
+
+        // Optionally move the zip itself into that same folder
+        rename($fullPath, "{$destDir}/" . basename($fullPath));
+
+        $this->logger->info('ZIP extraction complete', ['dest' => $destDir]);
     }
 }

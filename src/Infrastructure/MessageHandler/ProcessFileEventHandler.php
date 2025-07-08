@@ -16,10 +16,6 @@ final class ProcessFileEventHandler
 
     public function __invoke(ProcessFileEventMessage $message): void
     {
-        $this->logger->debug('Handler invoked for message', [
-            'path' => $message->path,
-            'type' => $message->eventType->value,
-        ]);
         $this->useCase->process($message->path, $message->eventType);
     }
 }

@@ -3,7 +3,6 @@ namespace App\Core\Application\UseCase;
 
 use App\Core\Port\EventType;
 use App\Core\Port\FileTypeStrategyInterface;
-use App\Core\Port\MovableFileTypeStrategyInterface;
 use Psr\Log\LoggerInterface;
 
 final class HandleFileEvent
@@ -19,81 +18,25 @@ final class HandleFileEvent
     
     public function process(string $fullPath, EventType $type): void
     {
-        $this->logger->info('Received filesystem event', [
-            'path' => $fullPath,
-            'type' => $type->value,
-        ]);
-
-        $extension = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+        $this->logger->info('Event', ['path'=>$fullPath,'type'=>$type->value]);
+        $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
 
         foreach ($this->strategies as $strategy) {
-            if (!$strategy->supports($extension, $type)) {
+            if (!$strategy->supports($ext, $type)) {
                 continue;
             }
 
-            $this->logger->info('Dispatching to strategy', [
-                'strategy'  => get_class($strategy),
-                'extension' => $extension,
-                'type'      => $type->value,
-            ]);
-
+            $this->logger->info('Using', ['strategy'=> get_class($strategy)]);
             try {
-                // execute the core handling
                 $strategy->handle($fullPath);
-                $this->logger->info('Strategy completed', [
-                    'strategy' => get_class($strategy),
-                    'path'     => $fullPath,
-                ]);
-
-                if (
-                    $strategy instanceof MovableFileTypeStrategyInterface
-                    && $type === EventType::CREATE
-                ) {
-                    $this->moveOnSuccess($fullPath, $extension);
-                }
-
+                $this->logger->info('Done', ['strategy'=> get_class($strategy)]);
             } catch (\Throwable $e) {
-                $this->logger->error('Error in strategy', [
-                    'strategy'  => get_class($strategy),
-                    'path'      => $fullPath,
-                    'exception' => $e,
-                ]);
-                $this->moveOnError($fullPath);
+                $this->logger->error('Error', ['strategy'=> get_class($strategy), 'err'=>$e->getMessage()]);
             }
 
-            // once one strategy handled it, we’re done
             return;
         }
 
-        $this->logger->warning('No strategy found for file', [
-            'path'      => $fullPath,
-            'extension' => $extension,
-            'type'      => $type->value,
-        ]);
+        $this->logger->warning('No strategy for', ['ext'=>$ext,'type'=>$type->value]);
     }
-
-    private function moveOnSuccess(string $fullPath, string $ext): void
-    {
-        $rel = ltrim(str_replace($this->watchedDir . '/', '', $fullPath), '/');
-        $target = "{$this->processedDir}/{$ext}/" . basename($rel);
-
-        if (!is_dir(dirname($target))) {
-            mkdir(dirname($target), 0755, true);
-        }
-        rename($fullPath, $target);
-        $this->logger->info('Moved file to processed', ['destination' => $target]);
-    }
-
-    private function moveOnError(string $fullPath): void
-    {
-        $target = $this->errorDir . '/' . basename($fullPath);
-        if (!is_dir(dirname($target))) {
-            mkdir(dirname($target), 0755, true);
-        }
-        if (file_exists($fullPath)) {
-            rename($fullPath, $target);
-        }
-        $this->logger->info('Moved file to error', ['destination' => $target]);
-    }
-
 }

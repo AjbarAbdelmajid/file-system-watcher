@@ -12,6 +12,7 @@ final class JsonStrategy implements FileTypeStrategyInterface
 {
     public function __construct(
         private readonly HttpClientPort  $client,
+        private readonly string          $processedDir,
         private readonly LoggerInterface $logger
     ) {}
 
@@ -23,9 +24,18 @@ final class JsonStrategy implements FileTypeStrategyInterface
 
     public function handle(string $fullPath): void
     {
-        $this->logger->info('Posting JSON file', ['path' => $fullPath]);
+        $this->logger->info('Posting JSON', ['path'=>$fullPath]);
         $data = json_decode(file_get_contents($fullPath), true);
         $this->client->postJson($fullPath, $data);
-        $this->logger->info('JSON POST complete', ['path' => $fullPath]);
+
+        // now move it into processed/json/
+        $destDir = $this->processedDir . '/json';
+        if (!is_dir($destDir)) {
+            mkdir($destDir, 0755, true);
+        }
+        $dest = $destDir . '/' . basename($fullPath);
+        rename($fullPath, $dest);
+
+        $this->logger->info('Moved JSON to processed', ['dest'=>$dest]);
     }
 }
